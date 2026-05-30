@@ -8,7 +8,6 @@ import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
-import com.example.counter.R
 import kotlinx.coroutines.delay
 
 class CounterWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
@@ -20,25 +19,16 @@ class CounterWorker(context: Context, params: WorkerParameters) : CoroutineWorke
     }
     
     override suspend fun doWork(): Result {
-        // جلب العدد الحالي من التخزين
         var count = getCurrentCount()
         
-        while (true) {
-            // تحديث العدد
+        while (!isStopped()) {
             count++
             saveCount(count)
-            
-            // تحديث الإشعار
             setForeground(createForegroundInfo(count))
-            
-            // الانتظار ثانية واحدة
             delay(1000)
-            
-            // التحقق إذا طلب المستخدم إيقاف العمل
-            if (isStopped) {
-                return Result.success()
-            }
         }
+        
+        return Result.success()
     }
     
     private fun createForegroundInfo(count: Int): ForegroundInfo {
@@ -79,9 +69,8 @@ class CounterWorker(context: Context, params: WorkerParameters) : CoroutineWorke
         prefs.edit().putInt("current_count", count).apply()
     }
     
-    private val isStopped: Boolean
-        get() {
-            val prefs = applicationContext.getSharedPreferences("counter_prefs", Context.MODE_PRIVATE)
-            return prefs.getBoolean("stop_counter", false)
-        }
+    private fun isStopped(): Boolean {
+        val prefs = applicationContext.getSharedPreferences("counter_prefs", Context.MODE_PRIVATE)
+        return prefs.getBoolean("stop_counter", false)
+    }
 }
